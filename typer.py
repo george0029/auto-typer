@@ -4,7 +4,7 @@
 
 # [x] Add input validation back — a bad file path currently crashes with an ugly error
 # [x] Let the user set their own base typing speed instead of the hardcoded 0.05–0.09 range
-# [] Add a --help message using argparse so the program is easier to use
+# [x] Add a --help message using argparse so the program is easier to use
 
 # Medium
 
@@ -15,28 +15,39 @@
 # Harder
 
 # [] Typos — randomly insert a wrong character, then "backspace" and correct it using terminal escape codes
-# [] argparse CLI — replace the input() prompts with proper command line arguments so you can run it like python typewriter.py file.txt --delay 0.07
+# [x] argparse CLI — replace the input() prompts with proper command line arguments so you can run it like python typewriter.py file.txt --delay 0.07
 # [] Colored output — use a library like rich or colorama to add terminal colors
 
-#C:\Users\gsher\Desktop\abcd.txt
+
 
 
 import time
 import random
+import argparse
 
-def read_file():
-    """reads the file inpurted by the user"""
-    while True:
-        try:
-            path = input("Enter the text file path: ")
-            if not path.endswith(".txt"):
-                print("Please enter a .txt file")
-                continue
-            with open(path) as f:
-                return f.read()
-            
-        except FileNotFoundError:
-            print("Please enter a valid path")
+parser = argparse.ArgumentParser(description="Simulates human typing from a text file")
+parser.add_argument("path", help="path to a .txt file to type out")
+parser.add_argument("--delay", type=float, nargs=2, metavar=("MIN", "MAX"), default=[0.05, 0.09], help="min and max delay per character in seconds (default: 0.05 0.09)")
+args = parser.parse_args()
+min_delay, max_delay = args.delay
+
+if min_delay < 0 or max_delay < 0:
+    parser.error("delay values must be non negative")
+elif min_delay > max_delay:
+    parser.error("The lower delay can not be higher than the upper delay")
+
+def read_file(path):
+    """reads the file inputed by the user"""
+   
+    try:
+        if not path.endswith(".txt"):
+            parser.error("Please enter a file that ends in .txt")
+
+        with open(path) as f:
+            return f.read()
+        
+    except FileNotFoundError:
+        parser.error("Please enter a valid file path")
   
 def get_delay(char_type, delay):
     """Gets delay depending on character being read"""
@@ -51,33 +62,9 @@ def get_delay(char_type, delay):
     else:
         return delay
 
+
 # opens the text file and reads it
-text = read_file()
-
-# user chooses typing delay
-while True:
-    try:
-        user_typing_delay = input("Choose a typing delay range separated by a comma (example: '0.05, 0.09') ")
-        if user_typing_delay == "default":
-            min_delay = 0.05
-            max_delay = 0.09
-        else:
-            user_typing_delay = user_typing_delay.split(", ")
-            min_delay = float(user_typing_delay[0])
-            max_delay = float(user_typing_delay[1])
-        try:
-            if input("Enable random typos? (y/n)") == "y".strip():
-                typo_check = True
-            else:
-                typo_check = False
-        except (ValueError):
-            print("Please enter 'y' or 'n'")
-        break
-    except (ValueError, IndexError):
-        print("Please enter two valid numbers separated by a comma")
-
-
-
+text = read_file(args.path)
 
 # types each character with random delay based on character type
 for c in text:
